@@ -7,7 +7,6 @@ on:
       - master
     paths:
       - 'frontend/**'
-      - 'portfolio/**'
       - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 
@@ -43,10 +42,6 @@ jobs:
         env:
           VITE_BACKEND_URL: ${{ vars.VITE_BACKEND_URL || 'https://your-backend-url.com' }}
         run: npm run build
-
-      - name: Copy portfolio to build
-        run: |
-          cp -r portfolio/* frontend/build/ 2>/dev/null || true
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
