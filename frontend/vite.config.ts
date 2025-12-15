@@ -5,6 +5,7 @@
 
   export default defineConfig({
     plugins: [react()],
+    base: '/PWS_V3/',
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
