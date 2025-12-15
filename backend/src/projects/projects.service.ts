@@ -14,11 +14,24 @@ export class ProjectsService {
   async findAll(userId?: string): Promise<Project[]> {
     const whereCondition = userId ? { userId } : { userId: IsNull() };
     
-    return this.projectRepository.find({
+    const projects = await this.projectRepository.find({
       where: whereCondition,
-      relations: ['conversations', 'files'],
+      relations: ['conversations', 'conversations.messages', 'files'],
       order: { createdAt: 'DESC' },
     });
+
+    // 각 대화의 메시지를 timestamp 순으로 정렬
+    projects.forEach(project => {
+      project.conversations?.forEach(conversation => {
+        if (conversation.messages) {
+          conversation.messages.sort((a, b) => 
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+        }
+      });
+    });
+
+    return projects;
   }
 
   async findOne(id: string, userId?: string): Promise<Project> {
@@ -35,6 +48,15 @@ export class ProjectsService {
     if (userId && project.userId && project.userId !== userId) {
       throw new ForbiddenException('이 프로젝트에 접근할 권한이 없습니다.');
     }
+
+    // 각 대화의 메시지를 timestamp 순으로 정렬
+    project.conversations?.forEach(conversation => {
+      if (conversation.messages) {
+        conversation.messages.sort((a, b) => 
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+      }
+    });
 
     return project;
   }
