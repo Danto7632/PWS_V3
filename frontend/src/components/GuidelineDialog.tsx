@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
@@ -13,13 +13,19 @@ interface GuidelineDialogProps {
 export function GuidelineDialog({ isOpen, onClose, onSave, currentGuideline = '' }: GuidelineDialogProps) {
   const [guideline, setGuideline] = useState(currentGuideline);
 
+  // 다이얼로그가 열릴 때 현재 가이드라인 값으로 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setGuideline(currentGuideline);
+    }
+  }, [isOpen, currentGuideline]);
+
   const handleSave = () => {
     onSave?.(guideline);
     onClose();
   };
 
   const handleClose = () => {
-    setGuideline(currentGuideline);
     onClose();
   };
 

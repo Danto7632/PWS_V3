@@ -64,6 +64,8 @@ interface SidebarProps {
   isLoggedIn: boolean;
   onLogin: () => void;
   onLogout: () => void;
+  userName?: string;
+  onAddConversation?: (projectId: string) => void;
 }
 
 export function Sidebar({
@@ -88,7 +90,8 @@ export function Sidebar({
   onCollapsedToggle,
   isLoggedIn,
   onLogin,
-  onLogout
+  onLogout,
+  userName
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSidebarButton, setShowSidebarButton] = useState(false);
@@ -183,12 +186,12 @@ export function Sidebar({
                   <PopoverTrigger asChild>
                     <button className="w-full p-2 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer">
                       <div className="size-8 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center">
-                        <span className="text-white text-sm">{isLoggedIn ? 'CS' : '?'}</span>
+                        <span className="text-white text-sm">{isLoggedIn && userName ? userName.charAt(0).toUpperCase() : isLoggedIn ? 'U' : '?'}</span>
                       </div>
                     </button>
                   </PopoverTrigger>
                   <PopoverContent side="right" align="end" className="w-64 p-0">
-                    <UserMenu isLoggedIn={isLoggedIn} onLogin={onLogin} onLogout={onLogout} />
+                    <UserMenu isLoggedIn={isLoggedIn} onLogin={onLogin} onLogout={onLogout} userName={userName} />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -270,17 +273,17 @@ export function Sidebar({
                   <PopoverTrigger asChild>
                     <button className="w-full flex items-center gap-3 p-2 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer">
                       <div className="size-8 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white text-sm">{isLoggedIn ? 'CS' : '?'}</span>
+                        <span className="text-white text-sm">{isLoggedIn && userName ? userName.charAt(0).toUpperCase() : isLoggedIn ? 'U' : '?'}</span>
                       </div>
                       <div className="flex-1 text-left min-w-0">
-                        <p className="text-sm truncate">{isLoggedIn ? 'CS Simulator' : '비회원'}</p>
+                        <p className="text-sm truncate">{isLoggedIn ? (userName || '사용자') : '비회원'}</p>
                         <p className="text-xs text-gray-500 truncate">{isLoggedIn ? 'Free Plan' : '임시 사용 중'}</p>
                       </div>
                       <MoreHorizontal className="size-4 text-gray-500 flex-shrink-0" />
                     </button>
                   </PopoverTrigger>
                   <PopoverContent side="top" align="start" className="w-64 p-0">
-                    <UserMenu isLoggedIn={isLoggedIn} onLogin={onLogin} onLogout={onLogout} />
+                    <UserMenu isLoggedIn={isLoggedIn} onLogin={onLogin} onLogout={onLogout} userName={userName} />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -292,7 +295,7 @@ export function Sidebar({
   );
 }
 
-function UserMenu({ isLoggedIn, onLogin, onLogout }: { isLoggedIn: boolean; onLogin: () => void; onLogout: () => void }) {
+function UserMenu({ isLoggedIn, onLogin, onLogout, userName }: { isLoggedIn: boolean; onLogin: () => void; onLogout: () => void; userName?: string }) {
   if (!isLoggedIn) {
     return (
       <div className="py-2">
@@ -318,7 +321,7 @@ function UserMenu({ isLoggedIn, onLogin, onLogout }: { isLoggedIn: boolean; onLo
             로그인 / 회원가입
           </button>
           <p className="text-xs text-gray-500 text-center mt-3">
-            ⚠️ 비회원은 탭을 닫으면 모든 데이터가 삭제됩니다
+            ⚠️ 비회원은 데이터가 서버에 저장되지 않습니다
           </p>
         </div>
       </div>
@@ -331,11 +334,11 @@ function UserMenu({ isLoggedIn, onLogin, onLogout }: { isLoggedIn: boolean; onLo
       <div className="px-4 py-3 border-b border-gray-200">
         <div className="flex items-center gap-3">
           <div className="size-10 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center">
-            <span className="text-white">CS</span>
+            <span className="text-white">{userName ? userName.charAt(0).toUpperCase() : 'U'}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="truncate">CS Simulator</p>
-            <p className="text-xs text-gray-500 truncate">@cssimulator</p>
+            <p className="truncate">{userName || '사용자'}</p>
+            <p className="text-xs text-gray-500 truncate">Free Plan</p>
           </div>
         </div>
       </div>

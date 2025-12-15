@@ -2,18 +2,21 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
+import apiService from '../services/api';
 
 interface AuthDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: () => void;
+  onLogin: (user: { id: string; email: string; name: string }) => void;
 }
 
 export function AuthDialog({ isOpen, onClose, onLogin }: AuthDialogProps) {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -21,23 +24,47 @@ export function AuthDialog({ isOpen, onClose, onLogin }: AuthDialogProps) {
     name: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setIsLoading(true);
     
-    if (isLoginMode) {
-      // 로그인 로직
-      console.log('로그인:', { email: formData.email, password: formData.password });
-    } else {
-      // 회원가입 로직
-      if (formData.password !== formData.confirmPassword) {
-        alert('비밀번호가 일치하지 않습니다.');
-        return;
+    try {
+      if (isLoginMode) {
+        // 로그인
+        const response = await apiService.login({
+          email: formData.email,
+          password: formData.password,
+        });
+        onLogin(response.user);
+        handleClose();
+      } else {
+        // 회원가입
+        if (formData.password !== formData.confirmPassword) {
+          setError('비밀번호가 일치하지 않습니다.');
+          setIsLoading(false);
+          return;
+        }
+        
+        if (formData.password.length < 6) {
+          setError('비밀번호는 최소 6자 이상이어야 합니다.');
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await apiService.register({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name || undefined,
+        });
+        onLogin(response.user);
+        handleClose();
       }
-      console.log('회원가입:', formData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    onLogin();
-    handleClose();
   };
 
   const handleClose = () => {
@@ -45,13 +72,14 @@ export function AuthDialog({ isOpen, onClose, onLogin }: AuthDialogProps) {
     setShowPassword(false);
     setShowConfirmPassword(false);
     setIsLoginMode(true);
+    setError(null);
     onClose();
   };
 
   const handleSocialLogin = (provider: string) => {
-    console.log(`${provider} 로그인`);
-    onLogin();
-    handleClose();
+    // TODO: OAuth 구현
+    console.log(`${provider} 로그인 - 추후 구현 예정`);
+    alert(`${provider} 로그인은 추후 지원 예정입니다.`);
   };
 
   return (
@@ -187,11 +215,22 @@ export function AuthDialog({ isOpen, onClose, onLogin }: AuthDialogProps) {
               </div>
             )}
 
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+                {error}
+              </div>
+            )}
+
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white py-5 sm:py-6 text-sm sm:text-base"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white py-5 sm:py-6 text-sm sm:text-base disabled:opacity-50"
             >
-              {isLoginMode ? '로그인' : '회원가입'}
+              {isLoading ? (
+                <Loader2 className="size-5 animate-spin" />
+              ) : (
+                isLoginMode ? '로그인' : '회원가입'
+              )}
             </Button>
           </form>
 

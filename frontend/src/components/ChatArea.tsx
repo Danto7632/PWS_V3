@@ -20,9 +20,7 @@ import {
 import { Button } from './ui/button';
 import { ModelSelector } from './ModelSelector';
 import { ProjectMenu } from './ProjectMenu';
-import { ApiKeySettings } from './ApiKeySettings';
 import { AddFileDialog } from './AddFileDialog';
-import { GuidelineDialog } from './GuidelineDialog';
 import { Message, Conversation, ProjectFile } from '../types';
 import {
   DropdownMenu,
@@ -52,13 +50,11 @@ interface ChatAreaProps {
   onAddFiles: (files: Array<{ name: string; size: number; type: string }>) => void;
   onDeleteProject?: () => void;
   onDeleteConversation?: (conversationId: string) => void;
-  apiKeys: { gpt: string; gemini: string; claude: string; perplexity: string; ollama: string };
-  onSaveApiKeys: (keys: { gpt: string; gemini: string; claude: string; perplexity: string; ollama: string }) => void;
-  isApiKeySettingsOpen: boolean;
-  onApiKeySettingsOpenChange: (open: boolean) => void;
   isLoggedIn: boolean;
   enabledModels: string[];
   projectFiles?: ProjectFile[];
+  projectGuidelines?: string;
+  onOpenProjectSetup?: () => void;
 }
 
 export function ChatArea({
@@ -71,22 +67,19 @@ export function ChatArea({
   onSendMessage,
   onToggleSidebar,
   onSelectConversation,
-  isApiKeySettingsOpen,
-  onApiKeySettingsOpenChange,
-  apiKeys,
-  onSaveApiKeys,
   projectFiles = [],
   onAddFiles,
   onDeleteProject,
   onDeleteConversation,
   isLoggedIn,
-  enabledModels
+  enabledModels,
+  projectGuidelines,
+  onOpenProjectSetup
 }: ChatAreaProps) {
   const [inputValue, setInputValue] = useState('');
   const [showTemplates, setShowTemplates] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isAddFileDialogOpen, setIsAddFileDialogOpen] = useState(false);
-  const [isGuidelineDialogOpen, setIsGuidelineDialogOpen] = useState(false);
   const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -141,26 +134,12 @@ export function ChatArea({
         </div>
       )}
 
-      {/* API Key Settings Modal */}
-      <ApiKeySettings
-        isOpen={isApiKeySettingsOpen}
-        onClose={() => onApiKeySettingsOpenChange(false)}
-        apiKeys={apiKeys}
-        onSaveApiKeys={onSaveApiKeys}
-      />
-
       {/* Add File Dialog */}
       <AddFileDialog
         isOpen={isAddFileDialogOpen}
         onClose={() => setIsAddFileDialogOpen(false)}
         onAddFiles={(files) => onAddFiles?.(files)}
         existingFiles={projectFiles}
-      />
-
-      {/* Guideline Dialog */}
-      <GuidelineDialog
-        isOpen={isGuidelineDialogOpen}
-        onClose={() => setIsGuidelineDialogOpen(false)}
       />
 
       {/* Main Content Area */}
@@ -194,18 +173,11 @@ export function ChatArea({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-56">
                         <DropdownMenuItem onClick={() => {
-                          setIsGuidelineDialogOpen(true);
+                          onOpenProjectSetup?.();
                           setIsProjectMenuOpen(false);
                         }}>
                           <Sliders className="mr-2 size-4" />
-                          프로젝트 설정
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {
-                          setIsAddFileDialogOpen(true);
-                          setIsProjectMenuOpen(false);
-                        }}>
-                          <FileText className="mr-2 size-4" />
-                          지침 추가
+                          지침 수정
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         {onDeleteProject && (
@@ -318,7 +290,20 @@ export function ChatArea({
                             : 'bg-white border border-gray-200 shadow-sm'
                         }`}
                       >
-                        <p className="whitespace-pre-wrap">{message.content}</p>
+                        {message.isLoading ? (
+                          <div className="flex items-center gap-1.5 py-1">
+                            <span className="size-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                            <span className="size-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                            <span className="size-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                          </div>
+                        ) : (
+                          <p className="whitespace-pre-wrap">
+                            {message.content}
+                            {message.isTyping && (
+                              <span className="inline-block w-0.5 h-4 bg-cyan-500 ml-0.5 animate-pulse"></span>
+                            )}
+                          </p>
+                        )}
                       </div>
                       {message.role === 'user' && (
                         <div className="size-8 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 flex-shrink-0 flex items-center justify-center shadow-sm">

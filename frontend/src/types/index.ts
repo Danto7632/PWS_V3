@@ -16,6 +16,8 @@ export interface Project {
   category?: string;
   files?: ProjectFile[];
   guidelines?: string;
+  uploadPercentage?: number;
+  userId?: string;
 }
 
 export interface Message {
@@ -23,6 +25,9 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  isLoading?: boolean;
+  isTyping?: boolean;
+  fullContent?: string;
 }
 
 export interface ProjectFile {

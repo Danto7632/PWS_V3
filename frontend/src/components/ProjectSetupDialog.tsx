@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
-import { FileText, Trash2, Upload } from 'lucide-react';
+import { FileText, Trash2, Upload, CheckCircle2, Loader2 } from 'lucide-react';
 import { Slider } from './ui/slider';
 import { Textarea } from './ui/textarea';
 import { ProjectFile } from '../types';
@@ -9,26 +9,56 @@ import { ProjectFile } from '../types';
 interface ProjectSetupDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (files: ProjectFile[], guidelines: string, uploadPercentage: number) => void;
+  onComplete: (files: ProjectFile[], guidelines: string, uploadPercentage: number, actualFiles?: File[]) => void;
   isLoggedIn: boolean;
+  initialGuidelines?: string;
+  initialUploadPercentage?: number;
+  initialFiles?: ProjectFile[];
 }
 
-export function ProjectSetupDialog({ isOpen, onClose, onComplete, isLoggedIn }: ProjectSetupDialogProps) {
-  const [files, setFiles] = useState<ProjectFile[]>([]);
-  const [guidelines, setGuidelines] = useState('');
-  const [uploadPercentage, setUploadPercentage] = useState(100);
+export function ProjectSetupDialog({ 
+  isOpen, 
+  onClose, 
+  onComplete, 
+  isLoggedIn,
+  initialGuidelines = '',
+  initialUploadPercentage = 100,
+  initialFiles = []
+}: ProjectSetupDialogProps) {
+  const [files, setFiles] = useState<ProjectFile[]>(initialFiles);
+  const [actualFiles, setActualFiles] = useState<File[]>([]);
+  const [guidelines, setGuidelines] = useState(initialGuidelines);
+  const [uploadPercentage, setUploadPercentage] = useState(initialUploadPercentage);
   const [isDragging, setIsDragging] = useState(false);
+  const [isLearning, setIsLearning] = useState(false);
+  const [learningComplete, setLearningComplete] = useState(false);
+  const [learningProgress, setLearningProgress] = useState(0);
+
+  // 초기값이 변경되면 상태 업데이트
+  useEffect(() => {
+    if (isOpen) {
+      setGuidelines(initialGuidelines);
+      setUploadPercentage(initialUploadPercentage);
+      setFiles(initialFiles);
+      setActualFiles([]);
+      setIsLearning(false);
+      setLearningComplete(false);
+      setLearningProgress(0);
+    }
+  }, [isOpen, initialGuidelines, initialUploadPercentage, initialFiles]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
     if (selectedFiles) {
-      const newFiles: ProjectFile[] = Array.from(selectedFiles).map((file) => ({
+      const fileArray = Array.from(selectedFiles);
+      const newFiles: ProjectFile[] = fileArray.map((file) => ({
         id: `${Date.now()}-${Math.random()}`,
         name: file.name,
         type: file.type || 'application/octet-stream',
         size: file.size,
       }));
       setFiles([...files, ...newFiles]);
+      setActualFiles([...actualFiles, ...fileArray]);
     }
   };
 
@@ -38,13 +68,15 @@ export function ProjectSetupDialog({ isOpen, onClose, onComplete, isLoggedIn }: 
     
     const droppedFiles = e.dataTransfer.files;
     if (droppedFiles) {
-      const newFiles: ProjectFile[] = Array.from(droppedFiles).map((file) => ({
+      const fileArray = Array.from(droppedFiles);
+      const newFiles: ProjectFile[] = fileArray.map((file) => ({
         id: `${Date.now()}-${Math.random()}`,
         name: file.name,
         type: file.type || 'application/octet-stream',
         size: file.size,
       }));
       setFiles([...files, ...newFiles]);
+      setActualFiles([...actualFiles, ...fileArray]);
     }
   };
 
@@ -58,21 +90,49 @@ export function ProjectSetupDialog({ isOpen, onClose, onComplete, isLoggedIn }: 
   };
 
   const handleRemoveFile = (id: string) => {
+    const index = files.findIndex(f => f.id === id);
+    if (index >= 0) {
+      setActualFiles(actualFiles.filter((_, i) => i !== index));
+    }
     setFiles(files.filter(file => file.id !== id));
   };
 
-  const handleComplete = () => {
-    onComplete(files, guidelines, uploadPercentage);
-    setFiles([]);
-    setGuidelines('');
-    setUploadPercentage(100);
-    onClose();
+  const handleComplete = async () => {
+    setIsLearning(true);
+    setLearningProgress(0);
+    
+    // 시뮬레이트 진행 상태 (실제로는 onComplete에서 처리)
+    const progressInterval = setInterval(() => {
+      setLearningProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 200);
+    
+    try {
+      await onComplete(files, guidelines, uploadPercentage, actualFiles);
+      clearInterval(progressInterval);
+      setLearningProgress(100);
+      setLearningComplete(true);
+      
+      // 2초 후 다이얼로그 닫기
+      setTimeout(() => {
+        setIsLearning(false);
+        setLearningComplete(false);
+        onClose();
+      }, 2000);
+    } catch (error) {
+      console.error('학습 실패:', error);
+      clearInterval(progressInterval);
+      setIsLearning(false);
+      setLearningProgress(0);
+    }
   };
 
   const handleClose = () => {
-    setFiles([]);
-    setGuidelines('');
-    setUploadPercentage(100);
     onClose();
   };
 
@@ -180,10 +240,34 @@ export function ProjectSetupDialog({ isOpen, onClose, onComplete, isLoggedIn }: 
             
             <Button
               onClick={handleComplete}
-              className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white"
+              disabled={isLearning}
+              className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white disabled:opacity-70"
             >
-              매뉴얼 학습 시작
+              {isLearning ? (
+                learningComplete ? (
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 className="size-5" />
+                    학습 완료!
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="size-5 animate-spin" />
+                    학습 중... {learningProgress}%
+                  </span>
+                )
+              ) : (
+                '매뉴얼 학습 시작'
+              )}
             </Button>
+
+            {isLearning && (
+              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-300 ${learningComplete ? 'bg-green-500' : 'bg-cyan-500'}`}
+                  style={{ width: `${learningProgress}%` }}
+                />
+              </div>
+            )}
 
             <div className="space-y-2 text-sm text-gray-500">
               <p>파일 업로드 또는 텍스트 입력 중 하나는 필수입니다.</p>
