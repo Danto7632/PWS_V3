@@ -1,0 +1,122 @@
+# ==========================================
+# CS 업무 시뮬레이터 - Git Ignore
+# ==========================================
+
+# ==========================================
+# 운영체제 관련
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ==========================================
+# IDE / 에디터
+# ==========================================
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# ==========================================
+# 환경 변수 파일 (민감 정보)
+# ==========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# ==========================================
+# Node.js / NPM
+# ==========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# ==========================================
+# Python
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+ENV/
+env/
+.venv/
+
+# ==========================================
+# 빌드 결과물
+# ==========================================
+# Frontend
+frontend/build/
+frontend/dist/
+
+# Backend
+backend/dist/
+
+# ==========================================
+# 데이터베이스 파일
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+backend/cs_simulator.db
+
+# ==========================================
+# AI 서비스 관련
+# ==========================================
+# ChromaDB 데이터 (사용자별 데이터)
+ai/work_simulator_db/
+
+# 테스트용 파일들
+ai/*.pdf
+ai/*.txt
+!ai/sample_manual.txt
+
+# 로그 파일
+ai/*.log
+ai/server.log
+
+# ==========================================
+# 로그 파일
+# ==========================================
+*.log
+logs/
+
+# ==========================================
+# 기타
+# ==========================================
+*.bak
+*.tmp
+*.temp
+.cache/
+coverage/
+.nyc_output/
